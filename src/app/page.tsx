@@ -1,14 +1,23 @@
 "use client";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { app } from '../firebase';
 import Toast from "@/components/toast";
 import { getAuth, signInWithEmailAndPassword,  createUserWithEmailAndPassword } from "firebase/auth";
+import { useRouter } from 'next/navigation'
 
 
 const Home = () => {
+  const router = useRouter()
+
   const [loginUser, setLoginUser] = useState({ email: '', password: '' });
   const [signUpUser, setSignUpUser] = useState({ email: '', password: '', confirmPassword: '' });
   const [toastMsg, setToastMsg] = useState({ msg: '', status: '' })
+
+  useEffect(() => {
+    if(localStorage.getItem('userid')) {
+      // router.push('/dashboard');
+    }
+  }, [])
 
   const onChangeLoginFields = (e: { target: { name: string; value: string; }; }) => {
     setLoginUser((prevState) => ({
@@ -37,6 +46,7 @@ const Home = () => {
         const user = userCredential.user;
         localStorage.setItem("userid", user.uid);
         showToastMsg("Login Success", "success")
+        router.push('/dashboard')
       })
       .catch((error) => {
         const errorCode = error.code;
@@ -54,7 +64,7 @@ const Home = () => {
           const user = userCredential.user;
           localStorage.setItem("userid", user.uid);
           showToastMsg("Signup Success", "success")
-
+          router.push('/dashboard')
         })
         .catch((error) => {
           const errorCode = error.code;
