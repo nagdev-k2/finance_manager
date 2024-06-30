@@ -37,14 +37,13 @@ const TransactionTable = (props: TransactionTableType) => {
   console.log('allTransactions===>', allTransactions);
   
   const itemType = (key:string , value: any) => {
-    
     switch(key) {
       case "type":
         return findType(value);
       case "category":
         return findCategory(value);
       case "date":
-        return "date";
+        return new Date(value.seconds * 1000).toDateString();
       default:
         return value;
     }
@@ -64,8 +63,10 @@ const TransactionTable = (props: TransactionTableType) => {
         {allTransactions.map((transaction, index) => (
           <tr className="w-full border-b-2 border-grey-100 h-[40px]" key={`${index}-table-row`}>
             <td className="border-r-2 border-grey-100">{index+1}</td>
-            {Object.keys(transaction).map((key, i) => (key != "id" && key!= "uid") && (
-                <td className="border-r-2 border-grey-100" key={`transaction-${i}-${index}`}>{itemType(key, transaction[key])}</td>
+            {tableHead.map((key, i) => Object.keys(transaction).includes(key.toLowerCase()) && (
+              <td className="border-r-2 border-grey-100" key={`transaction-${i}-${index}`}>
+                {itemType(key.toLowerCase(), transaction[key.toLowerCase()])}
+              </td>
             ))}
             <td className="border-r-2 border-grey-100" ><button>Edit</button></td>
             <td className="border-r-2 border-grey-100"><button>Delete</button></td>
