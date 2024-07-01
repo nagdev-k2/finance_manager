@@ -1,15 +1,22 @@
 "use client";
 import { useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
-import { addDoc, collection, getDocs, query, where } from "firebase/firestore";
+import { addDoc, collection, getDocs, doc, updateDoc, query, where, deleteDoc } from "firebase/firestore";
 import { db } from '@/firebase';
 import { Timestamp } from "@firebase/firestore";
 import Toast from '@/components/toast';
 import TransactionTable from './transactionTable';
+import NewTransaction from './newTransaction';
+
+let newDate = new Date()
+let month = newDate.getMonth()+1 < 10 ? `0${newDate.getMonth()+1}` : newDate.getMonth()+1
+let date = `${newDate.getFullYear()}-${month}-${newDate.getDate()}`
+const initialTransactionState = { id: '', type: '', category: '', uid: localStorage.getItem("userid"), date, source: '', value: 0, comments: 'N.A.' }
 
 const Dashboard = () => {
   const router = useRouter();
-  const [transaction, setTransaction] = useState({ type: '', category: '', uid: localStorage.getItem("userid"), date: Date(), source: '', value: 0, comments: 'N.A.' })
+  const [transaction, setTransaction] = useState(initialTransactionState)
+  const [allTransactions, setAllTransactions] = useState([]);
   const [types, setTypes] = useState([]);
   const [categories, setCategories] = useState([]);
   const [toastMsg, setToastMsg] = useState({msg: '', status: ''})
@@ -25,6 +32,33 @@ const Dashboard = () => {
       i++;
     });
     setTypes(data)
+  }
+
+  const handleEditTransaction = (transaction: any) => {
+    setTransaction(transaction);
+    let transactionDate = new Date(transaction.date.seconds*1000)
+    let month = transactionDate.getMonth()+1 < 10 ? `0${transactionDate.getMonth()+1}` : transactionDate.getMonth()+1
+    let date = `${transactionDate.getFullYear()}-${month}-${transactionDate.getDate()}`
+    handleTransactionChange({target: {name: 'date', value: date}})
+  }
+
+  const deleteTransaction = async (id:string) => {
+    if (confirm("Are you sure you want to delete?")) {
+      await deleteDoc(doc(db, "transactions", id)).then((res) => {
+        setToastMsg({msg: 'Transaction Deleted', status: 'success'});
+        getAllTransactions();
+      })
+    }
+  }
+
+  const getAllTransactions = async () => {
+    const querySnapshot = await getDocs(query(collection(db, "transactions"), where("uid", "==", localStorage.getItem("userid"))));
+    let data:any = [];
+    querySnapshot.forEach((doc) => {
+      // doc.data() is never undefined for query doc snapshots
+      data.push({id: doc.id, ...doc.data()})
+    });
+    setAllTransactions(data);
   }
 
   const getAllCategories = async () => {
@@ -48,13 +82,26 @@ const Dashboard = () => {
   }
 
   const handleAddTransaction = async () => {
-    await addDoc(collection(db, "transactions"), {
-      ...transaction,
-      date: Timestamp.fromDate(new Date(transaction.date))
-    }).then((res) => {
-      setToastMsg({msg: 'Added Successfully', status: 'success'})
-    })
-
+    let result = null;
+    const clone = (({ id, ...o }) => o)(transaction)
+    let date = Timestamp.fromDate(new Date(`${transaction.date} `));
+    if (transaction.id) {
+      result = await updateDoc(doc(db, "transactions", transaction.id), {...clone, date}).then((res) => {
+        setToastMsg({msg: 'Updated Successfully', status: 'success'})
+        setTransaction(initialTransactionState)
+        getAllTransactions();
+      }).catch((e) => {
+        setToastMsg({msg: e.message, status: 'danger'})
+      })
+    } else {
+      result = await addDoc(collection(db, "transactions"), {...clone, date}).then((res) => {
+        setToastMsg({msg: 'Added Successfully', status: 'success'})
+        setTransaction(initialTransactionState)
+        getAllTransactions();
+      }).catch((e) => {
+        setToastMsg({msg: e.message, status: 'danger'})
+      })
+    }
   }
 
   useEffect(() => {
@@ -63,48 +110,32 @@ const Dashboard = () => {
     }
     getAllCategories();
     getAllTypes();
+    getAllTransactions();
   }, [])
+
+  console.log("transaction===>", transaction);
+  
 
   return (
     <div className='bg-white h-[100vh] text-black p-5'>
-      <div className='mb-10 border-b-2 border-grey-100 pb-4'>
-        <div className='text-lg font-bold pb-2'>Add New Transaction</div>
-        <div className='flex items-end'>
-          <div className='mr-5'>
-            <label>Type: </label>
-            <select className='border-2 rounded-xl p-2 w-full' name="type" onChange={handleTransactionChange}>
-              {types.map((type:any) => <option key={type.id} value={type.id}> {type.name} </option>)}
-            </select>
-          </div>
-          <div className='mr-5'>
-            <label>Categories: </label>
-            <select className='border-2 rounded-xl p-2 w-full' name="category" onChange={handleTransactionChange}>
-              {categories.map((category:any) => <option key={category.id} value={category.id}> {category.name} </option>)}
-            </select>
-          </div>
-          <div className='mr-5'>
-            <label>Date: </label>
-            <input type='date' className='border-2 rounded-xl p-2 w-full' name="date" value={transaction.date} onChange={handleTransactionChange} />
-          </div>
-          <div className='mr-5'>
-            <label>Source: </label>
-            <input type='text' className='border-2 rounded-xl p-2 w-full' name="source" value={transaction.source} onChange={handleTransactionChange} />
-          </div>
-          <div className='mr-5'>
-            <label>Value: </label>
-            <input type='number' className='border-2 rounded-xl p-2 w-full' name="value" value={transaction.value} onChange={handleTransactionChange} />
-          </div>
-          <div className='mr-5'>
-            <label>Comments: </label>
-            <input type='text' className='border-2 rounded-xl p-2 w-full' name="comments" value={transaction.comments} onChange={handleTransactionChange} />
-          </div>
-          <button className='bg-black text-white rounded-xl w-[100px] h-[50px]' type="submit" onClick={handleAddTransaction}> + Add </button>
-        </div>
-      </div>
-      <TransactionTable types={types} categories={categories} />
+      <NewTransaction
+        transaction={transaction}
+        handleAddTransaction={handleAddTransaction}
+        handleTransactionChange={handleTransactionChange}
+        types={types}
+        categories={categories}
+      />
+      <TransactionTable
+        types={types}
+        categories={categories}
+        allTransactions={allTransactions}
+        setTransaction={handleEditTransaction}
+        setToastMsg={setToastMsg}
+        deleteTransaction={deleteTransaction}
+      />
       <Toast msg={toastMsg.msg} status={toastMsg.status} />
     </div>
-  )
-}
+  );
+};
 
 export default Dashboard; 

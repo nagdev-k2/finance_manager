@@ -10,7 +10,10 @@ const Toast = (props: ToastType) => {
   const [show, setShow] = useState(false);
 
   useEffect(() => {
-    if (props.msg) setShow(true);
+    if (props.msg) {
+      setShow(true);
+      setTimeout(() => setShow(false), 3000)
+    }
     else setShow(false)
   }, [props.msg])
   let toastClass = "absolute right-2 bottom-2 flex text-white items-center w-full max-w-xs p-4 text-gray-500 rounded-lg shadow dark:text-gray-400 dark:bg-gray-800"

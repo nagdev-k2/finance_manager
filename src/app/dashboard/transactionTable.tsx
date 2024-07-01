@@ -1,16 +1,17 @@
 "use client";
-import { db } from "@/firebase";
-import { getDocs, query, collection, where } from "firebase/firestore";
-import React, { useEffect, useState } from "react";
+import React from "react";
 
 interface TransactionTableType {
   types: any;
   categories: any;
+  allTransactions: any;
+  setTransaction: Function;
+  setToastMsg: Function;
+  deleteTransaction: Function;
 }
 
 const TransactionTable = (props: TransactionTableType) => {
   const tableHead = ['S. No', 'Date', 'Source', 'Type', 'Category', 'Value', 'Comments', 'Edit', 'Delete']
-  const [allTransactions, setAllTransactions] = useState([]);
 
   const findType = (id:string) => {
     return props.types ? props.types?.find((t:any) => t.id === id).name : "";
@@ -20,22 +21,6 @@ const TransactionTable = (props: TransactionTableType) => {
     return props.categories ? props.categories?.find((t:any) => t.id === id).name : "";
   }
 
-  const getAllTransactions = async () => {
-    const querySnapshot = await getDocs(query(collection(db, "transactions"), where("uid", "==", localStorage.getItem("userid"))));
-    let data:any = [];
-    querySnapshot.forEach((doc) => {
-      // doc.data() is never undefined for query doc snapshots
-      data.push({id: doc.id, ...doc.data()})
-    });
-    setAllTransactions(data);
-  }
-
-  useEffect(() => {
-    getAllTransactions();
-  }, [])
-
-  console.log('allTransactions===>', allTransactions);
-  
   const itemType = (key:string , value: any) => {
     switch(key) {
       case "type":
@@ -60,7 +45,7 @@ const TransactionTable = (props: TransactionTableType) => {
         </tr>
       </thead>
       <tbody>
-        {allTransactions.map((transaction, index) => (
+        {props.allTransactions.map((transaction, index) => (
           <tr className="w-full border-b-2 border-grey-100 h-[40px]" key={`${index}-table-row`}>
             <td className="border-r-2 border-grey-100">{index+1}</td>
             {tableHead.map((key, i) => Object.keys(transaction).includes(key.toLowerCase()) && (
@@ -68,8 +53,8 @@ const TransactionTable = (props: TransactionTableType) => {
                 {itemType(key.toLowerCase(), transaction[key.toLowerCase()])}
               </td>
             ))}
-            <td className="border-r-2 border-grey-100" ><button>Edit</button></td>
-            <td className="border-r-2 border-grey-100"><button>Delete</button></td>
+            <td className="border-r-2 border-grey-100" ><button onClick={() => props.setTransaction(transaction)}>Edit</button></td>
+            <td className="border-r-2 border-grey-100"><button onClick={() => props.deleteTransaction(transaction?.id)}>Delete</button></td>
           </tr>
         ))}
       </tbody>
