@@ -113,9 +113,6 @@ const Dashboard = () => {
     getAllTransactions();
   }, [])
 
-  console.log("transaction===>", transaction);
-  
-
   return (
     <div className='bg-white h-[100vh] text-black p-5'>
       <NewTransaction
