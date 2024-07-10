@@ -116,8 +116,24 @@ const Dashboard = () => {
 
   return (
     <Layout>
-      <div>Pie chart</div>
-      <div>Graph</div>
+      <>
+        <NewTransaction
+          transaction={transaction}
+          handleAddTransaction={handleAddTransaction}
+          handleTransactionChange={handleTransactionChange}
+          types={types}
+          categories={categories}
+        />
+        <TransactionTable
+          types={types}
+          categories={categories}
+          allTransactions={allTransactions}
+          setTransaction={handleEditTransaction}
+          setToastMsg={setToastMsg}
+          deleteTransaction={deleteTransaction}
+        />
+        <Toast msg={toastMsg.msg} status={toastMsg.status} />
+      </>
     </Layout>
   );
 };
