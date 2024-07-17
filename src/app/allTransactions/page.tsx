@@ -1,7 +1,7 @@
 "use client";
 import { useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
-import { addDoc, collection, getDocs, doc, updateDoc, query, where, deleteDoc } from "firebase/firestore";
+import { addDoc, collection, getDocs, doc, updateDoc, query, where, deleteDoc, orderBy } from "firebase/firestore";
 import { db } from '@/firebase';
 import { Timestamp } from "@firebase/firestore";
 import Toast from '@/components/toast';
@@ -53,7 +53,7 @@ const Dashboard = () => {
   }
 
   const getAllTransactions = async () => {
-    const querySnapshot = await getDocs(query(collection(db, "transactions"), where("uid", "==", localStorage.getItem("userid"))));
+    const querySnapshot = await getDocs(query(collection(db, "transactions"), orderBy("date", "desc"), where("uid", "==", localStorage.getItem("userid"))));
     let data:any = [];
     querySnapshot.forEach((doc) => {
       // doc.data() is never undefined for query doc snapshots

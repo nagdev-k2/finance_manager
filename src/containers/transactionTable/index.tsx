@@ -14,11 +14,11 @@ const TransactionTable = (props: TransactionTableType) => {
   const tableHead = ['S. No', 'Date', 'Source', 'Type', 'Category', 'Value', 'Comments', 'Edit', 'Delete']
 
   const findType = (id:string) => {
-    return props.types ? props.types?.find((t:any) => t.id === id).name : "";
+    return props.types ? props.types?.find((t:any) => t.id === id)?.name : "";
   }
 
   const findCategory = (id:string) => {
-    return props.categories ? props.categories?.find((t:any) => t.id === id).name : "";
+    return props.categories ? props.categories?.find((t:any) => t.id === id)?.name : "";
   }
 
   const itemType = (key:string , value: any) => {
